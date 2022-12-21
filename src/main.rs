@@ -5,7 +5,7 @@ use std::env;
 use std::fs;
 use walkdir::{DirEntry, WalkDir};
 use flate2::Compression;
-use flate2::write::ZlibEncoder;
+use flate2::write::GzEncoder;
 use std::mem::transmute;
 use std::fs::metadata;
 
@@ -18,7 +18,6 @@ fn is_not_hidden(entry: &DirEntry) -> bool {
 }
 
 fn main() -> Result<(), std::io::Error > {
-	let enableCompression = false;
     let args: Vec<String> = env::args().collect();
     let rootDir: String;
     if args.len() > 1 {
@@ -50,19 +49,23 @@ fn main() -> Result<(), std::io::Error > {
             continue;
         }
 		let mimeType : &str;
+		let mut enableCompression = false;
 		let contentType: String = match dir.path().extension() {
 			Some( ext ) => { 
 				mimeType = match ext.to_ascii_lowercase().to_str().unwrap() {
-					"css" => { "text/css" }
-					"js" => { "text/javascript" }
+					"css" => { enableCompression = true; "text/css" }
+					"js" => {  enableCompression = true;"text/javascript" }
 					"mp3" => { "audio/*" }
 					"ogg" => { "audio/ogg" }
 					"gif" => { "image/gif" }
-					"bmp" => { "image/bmp" }
+					"bmp" => { enableCompression = true; "image/bmp" }
 					"png" => { "image/png" }
+					"ico" => { "image/x-icon" }
+					"txt"|"nfo" => { enableCompression = true; "text/plain" }
 					"jpg" | "jpeg" => { "image/jpeg" }
-					"html" => { "text/html; charset=utf-8" }
-					_ => { "application/octet-stream" }
+					"html" => {  enableCompression = true; "text/html; charset=utf-8" }
+					"rar"|"zip"|"gz"|"7zip" => { "application/octet-stream" }
+					_ => {  enableCompression = true; "application/octet-stream" }
 				};
 				format!( "Content-Type: {} \r\n", mimeType )
 			}
@@ -80,7 +83,7 @@ fn main() -> Result<(), std::io::Error > {
         stream.write_all( webPath.as_bytes() ) ?;
 
 		if ( enableCompression ) {
-			let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
+			let mut e = GzEncoder::new(Vec::new(), Compression::best());
 			println!( "Compress {:^30} {}",  format!( "[{}] ", mimeType ).as_str(), webPath.as_str() );
 			let input = fs::read( dir.path() )?;
 			e.write_all(input.as_slice())?;
@@ -96,7 +99,7 @@ fn main() -> Result<(), std::io::Error > {
 			stream.write_all( anwserBuffer ) ?;
 			stream.write_all( compressed_bytes.as_slice() ) ?;
 		} else {
-			println!( "Copy {:^30} {}",  format!( "[{}] ", mimeType ).as_str(), webPath.as_str() );
+			println!( "Copy     {:^30} {}",  format!( "[{}] ", mimeType ).as_str(), webPath.as_str() );
 			let input = fs::read( dir.path() )?;
 			let dataLen: u32 = input.len() as u32;
 			let anwser = format!( "HTTP/1.0 200 OK\r\n{}Content-Length: {}\r\n\r\n", contentType, dataLen );
