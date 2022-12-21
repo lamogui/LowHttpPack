@@ -43,7 +43,11 @@ fn main() -> Result<(), std::io::Error > {
         let mut webPath : String = dir.path().to_str().unwrap().to_string();
         webPath = webPath.replace( rootDir.as_str(), "" );
         webPath = webPath.replace( '\\',  "/" );
-		webPath = webPath.replace( "/index.html",  "/" );
+		if ( webPath == "/index.html" ) {
+			webPath = webPath.replace( "/index.html",  "/" );
+		} else {
+			webPath = webPath.replace( "/index.html",  "" ); // don't use the / 
+		}
         let md = metadata(dir.path()).unwrap();
         if ( webPath.is_empty() || md.is_dir() ) {
             continue;
@@ -64,7 +68,7 @@ fn main() -> Result<(), std::io::Error > {
 					"txt"|"nfo" => { enableCompression = true; "text/plain" }
 					"jpg" | "jpeg" => { "image/jpeg" }
 					"html" => {  enableCompression = true; "text/html; charset=utf-8" }
-					"rar"|"zip"|"gz"|"7zip" => { "application/octet-stream" }
+					"rar"|"zip"|"gz"|"7z" => { "application/octet-stream" }
 					_ => {  enableCompression = true; "application/octet-stream" }
 				};
 				format!( "Content-Type: {} \r\n", mimeType )
