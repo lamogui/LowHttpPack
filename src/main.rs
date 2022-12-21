@@ -43,11 +43,8 @@ fn main() -> Result<(), std::io::Error > {
         let mut webPath : String = dir.path().to_str().unwrap().to_string();
         webPath = webPath.replace( rootDir.as_str(), "" );
         webPath = webPath.replace( '\\',  "/" );
-		if ( webPath == "/index.html" ) {
-			webPath = webPath.replace( "/index.html",  "/" );
-		} else {
-			webPath = webPath.replace( "/index.html",  "" ); // don't use the / 
-		}
+		webPath = webPath.replace( "/index.html",  "/" );
+		
         let md = metadata(dir.path()).unwrap();
         if ( webPath.is_empty() || md.is_dir() ) {
             continue;

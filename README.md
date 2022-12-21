@@ -11,5 +11,5 @@ Just run the exe in cmdline using ```./LowHttpPack(.exe) <path/to/website/pack> 
 Additional informations
 -----------------------
  * ***LowHttpPack*** pack all files recursively, be sure to not have any sensitive informations inside packed files. 
- * ***LowHttpPack*** replace all request to ```<parent>/index.html``` by ```<parent>``` to have smart url resolution, the only exception is the root ```/index.html``` that will be replaced by ```/``` to match the root file request of the browsers. 
+ * ***LowHttpPack*** replace all request to ```<parent>/index.html``` by ```<parent>/``` to avoid the need to put explicitly index.html in your 
  * ***LowHttpPack*** deduce compress files that can be compressed (text and binary if not already compressed format like zip or png) in gzip http compression based on their file extension. It also deduce mimetype for the request from their (because browser often require them).
