@@ -82,25 +82,29 @@ fn main() -> Result<(), std::io::Error > {
 
 		if ( enableCompression ) {
 			let mut e = GzEncoder::new(Vec::new(), Compression::best());
-			println!( "Compress {:^30} {}",  format!( "[{}] ", mimeType ).as_str(), webPath.as_str() );
+			
 			let input = fs::read( dir.path() )?;
 			e.write_all(input.as_slice())?;
 			let compressed_bytes = e.finish()?;
 			let compressedLen: u32 = compressed_bytes.len() as u32;
 			let anwser = format!( "HTTP/1.0 200 OK\r\nContent-Encoding: gzip\r\n{}Content-Length: {}\r\n\r\n", contentType, compressedLen );
 			let anwserBuffer = anwser.as_bytes();
-			stream.write_all( &(anwserBuffer.len() as u32).to_le_bytes() ) ?;
+			let totalSize = (anwserBuffer.len() as u32) + compressedLen;
+			println!( "Compress {:^30} {} ({} bytes)",  format!( "[{}] ", mimeType ).as_str(), webPath.as_str(), totalSize );
+			stream.write_all( &totalSize.to_le_bytes() ) ?;
 			stream.write_all( anwserBuffer ) ?;
-			stream.write_all( compressed_bytes.as_slice() ) ?;
+			stream.write_all( &compressed_bytes ) ?;
 		} else {
-			println!( "Copy     {:^30} {}",  format!( "[{}] ", mimeType ).as_str(), webPath.as_str() );
+			
 			let input = fs::read( dir.path() )?;
 			let dataLen: u32 = input.len() as u32;
 			let anwser = format!( "HTTP/1.0 200 OK\r\n{}Content-Length: {}\r\n\r\n", contentType, dataLen );
 			let anwserBuffer = anwser.as_bytes();
-			stream.write_all( &(anwserBuffer.len() as u32).to_le_bytes() ) ?;
+			let totalSize = (anwserBuffer.len() as u32) + dataLen;
+			println!( "Copy     {:^30} {} ({} bytes)",  format!( "[{}] ", mimeType ).as_str(), webPath.as_str(), totalSize );
+			stream.write_all( &totalSize.to_le_bytes() ) ?;
 			stream.write_all( anwserBuffer ) ?;
-			stream.write_all( input.as_slice() ) ?;
+			stream.write_all( &input ) ?;
 		}
     }
     stream.flush();
