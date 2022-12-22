@@ -75,13 +75,10 @@ fn main() -> Result<(), std::io::Error > {
 				"Content-Type: text/plain\r\n".to_string() 
 			}
 		};
-        let mut sizeBytes: [u8;4];
-        unsafe {
-            let len: u32 = webPath.as_bytes().len() as u32;
-            sizeBytes = transmute( len.to_le() );
-        }
-        stream.write_all( &sizeBytes ) ?;
-        stream.write_all( webPath.as_bytes() ) ?;
+		let webPathBytes = webPath.as_bytes();
+		let webPathSize = webPathBytes.len() as u32;
+        stream.write_all( &webPathSize.to_le_bytes() ) ?;
+        stream.write_all( webPathBytes ) ?;
 
 		if ( enableCompression ) {
 			let mut e = GzEncoder::new(Vec::new(), Compression::best());
@@ -92,11 +89,7 @@ fn main() -> Result<(), std::io::Error > {
 			let compressedLen: u32 = compressed_bytes.len() as u32;
 			let anwser = format!( "HTTP/1.0 200 OK\r\nContent-Encoding: gzip\r\n{}Content-Length: {}\r\n\r\n", contentType, compressedLen );
 			let anwserBuffer = anwser.as_bytes();
-			unsafe {
-				let len = compressedLen + ( anwserBuffer.len() as u32 );
-				sizeBytes = transmute( len.to_le() );
-			}
-			stream.write_all( &sizeBytes ) ?;
+			stream.write_all( &(anwserBuffer.len() as u32).to_le_bytes() ) ?;
 			stream.write_all( anwserBuffer ) ?;
 			stream.write_all( compressed_bytes.as_slice() ) ?;
 		} else {
@@ -105,11 +98,7 @@ fn main() -> Result<(), std::io::Error > {
 			let dataLen: u32 = input.len() as u32;
 			let anwser = format!( "HTTP/1.0 200 OK\r\n{}Content-Length: {}\r\n\r\n", contentType, dataLen );
 			let anwserBuffer = anwser.as_bytes();
-			unsafe {
-				let len = dataLen + ( anwserBuffer.len() as u32 );
-				sizeBytes = transmute( len.to_le() );
-			}
-			stream.write_all( &sizeBytes ) ?;
+			stream.write_all( &(anwserBuffer.len() as u32).to_le_bytes() ) ?;
 			stream.write_all( anwserBuffer ) ?;
 			stream.write_all( input.as_slice() ) ?;
 		}
